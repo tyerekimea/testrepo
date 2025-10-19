@@ -14,7 +14,7 @@ import {z} from 'genkit';
 const PuzzleContentInputSchema = z.object({
   difficulty: z
     .number()
-    .describe("The difficulty level of the puzzle.  1-10 is easy, 11-25 is medium, 26+ is hard.  This affects the type of word and definition that should be generated."),
+    .describe("The difficulty level of the puzzle. A lower number means an easier word. For difficulty levels below 10, the words should be common, everyday words that are easy to guess."),
 });
 export type PuzzleContentInput = z.infer<typeof PuzzleContentInputSchema>;
 
@@ -41,6 +41,8 @@ const puzzleContentPrompt = ai.definePrompt({
   The game generates a word and its corresponding definition for the player to guess.
 
   The difficulty is: {{{difficulty}}}.
+
+  For difficulty levels below 10, you MUST generate common, everyday words that are easy for a player to guess. As the difficulty number increases, the words should become progressively more challenging.
 
   Based on this difficulty, generate a word and definition, along with hints, that is appropriate for this difficulty level.
 
