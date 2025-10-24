@@ -1,124 +1,22 @@
-/**
- * @fileoverview Firestore Security Rules for Definition Detective.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user profiles and game sessions,
- * while allowing public read access to leaderboard entries. All writes are restricted to
- * authenticated users and must adhere to ownership constraints.
- *
- * Data Structure:
- * - /userProfiles/{userId}: Stores user profile data, accessible only to the user.
- * - /userProfiles/{userId}/gameSessions/{gameSessionId}: Stores game session data for a user,
- *   accessible only to that user.
- * - /leaderboardEntries/{leaderboardEntryId}: Stores leaderboard entries, publicly readable but
- *   only writable by authenticated users.
- *
- * Key Security Decisions:
- * - User listing is disallowed.
- * - Leaderboard reads are public.
- * - All write operations require authentication.
- *
- * Denormalization for Authorization:
- * - UserProfile.id must match the {userId} path parameter to enforce ownership.
- * - GameSession.userProfileId must match the {userId} path parameter to enforce ownership.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Protects user profile data, allowing only the owner to read and write.
-     * @path /userProfiles/{userProfileId}
-     * @allow (get, update, delete) if request.auth.uid == userProfileId
-     * @allow (create) if request.auth.uid == request.resource.data.id
-     * @deny (create) if request.auth.uid != request.resource.data.id
-     * @deny (get, update, delete) if request.auth.uid != userProfileId
-     * @principle Enforces document ownership for writes.
-     */
+    // By default, deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow authenticated users to read the leaderboard and their own profile
     match /userProfiles/{userProfileId} {
-      // Helper function to check if the user is signed in
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // Helper function to check if the user is the owner of the document
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Helper function to check if the user is the owner of the existing document
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userProfileId);
-      allow list: if false; // User listing is not allowed
-
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.id;
-      allow update: if isSignedIn() && isOwner(userProfileId);
-      allow delete: if isSignedIn() && isOwner(userProfileId);
+      allow get, list: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == userProfileId;
     }
 
-    /**
-     * @description Protects game session data, allowing only the owner to read and write.
-     * @path /userProfiles/{userProfileId}/gameSessions/{gameSessionId}
-     * @allow (get, list, create, update, delete) if request.auth.uid == userProfileId
-     * @deny (create) if request.auth.uid != request.resource.data.userProfileId
-     * @deny (get, list, update, delete) if request.auth.uid != userProfileId
-     * @principle Enforces document ownership for writes.
-     */
-    match /userProfiles/{userProfileId}/gameSessions/{gameSessionId} {
-      // Helper function to check if the user is signed in
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // Helper function to check if the user is the owner of the document
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Helper function to check if the user is the owner of the existing document
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userProfileId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.userProfileId == userProfileId;
-      allow update: if isSignedIn() && isOwner(userProfileId);
-      allow delete: if isSignedIn() && isOwner(userProfileId);
-    }
-
-    /**
-     * @description Allows public read access to leaderboard entries, but restricts writes to authenticated users.
-     * @path /leaderboardEntries/{leaderboardEntryId}
-     * @allow (get, list) if true
-     * @allow (create, update, delete) if request.auth != null
-     * @deny (create) if request.auth == null
-     * @principle Allows public read access while restricting writes to authenticated users.
-     */
-    match /leaderboardEntries/{leaderboardEntryId} {
-      // Helper function to check if the user is signed in
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // Helper function to check if the user is the owner of the existing document
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      allow get, list: if true;
-
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+    // Allow authenticated users to create their own profile
+    match /userProfiles/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
