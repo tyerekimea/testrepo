@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, firestore, auth, router]);
 
-  const value: AuthContextType = { user, loading, login, signup, logout, updateUsername, deleteAccount };
+  const value = { user, loading, login, signup, logout, updateUsername, deleteAccount };
 
   return (
     <AuthContext.Provider value={value}>
