@@ -146,7 +146,8 @@ export default function GameClient() {
       if (sounds.win) playSound(sounds.win);
       const difficulty = getDifficultyForLevel(level);
       const scoreGained = (difficulty === 'easy' ? 10 : difficulty === 'medium' ? 20 : 30);
-      setScore(s => s + scoreGained);
+      const newScore = score + scoreGained;
+      setScore(newScore);
       const newLevel = level + 1;
       updateFirestoreUser(scoreGained, newLevel);
       setTimeout(() => {
@@ -156,7 +157,7 @@ export default function GameClient() {
     } else if (guessedLetters.incorrect.length >= MAX_INCORRECT_TRIES) {
       setGameState("lost");
     }
-  }, [guessedLetters, wordData, level, user, sounds, playSound, startNewGame, updateFirestoreUser, gameState]);
+  }, [guessedLetters, wordData, level, score, sounds, playSound, startNewGame, updateFirestoreUser]);
 
 
   const incorrectTriesLeft = MAX_INCORRECT_TRIES - guessedLetters.incorrect.length;
