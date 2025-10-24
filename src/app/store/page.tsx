@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { useTheme } from "@/hooks/use-theme";
 
 const themes = [
   { id: "noir", name: "Film Noir", description: "A classic black and white detective look." },
@@ -30,6 +31,7 @@ export default function StorePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
+  const { setTheme } = useTheme();
 
   const userProfileRef = useMemoFirebase(() => 
     user ? doc(firestore, "userProfiles", user.uid) : null
@@ -44,7 +46,6 @@ export default function StorePage() {
   
   const handlePurchaseTheme = async (themeId: string) => {
     if (!userProfileRef) return;
-    toast({ title: "Purchase Successful!", description: `You've unlocked the ${themes.find(t=>t.id === themeId)?.name} theme.` });
     
     updateDoc(userProfileRef, {
         purchasedThemes: arrayUnion(themeId)
@@ -56,6 +57,10 @@ export default function StorePage() {
         });
         errorEmitter.emit('permission-error', permissionError);
     });
+    
+    // @ts-ignore
+    setTheme(themeId);
+    toast({ title: "Purchase Successful!", description: `You've unlocked and applied the ${themes.find(t=>t.id === themeId)?.name} theme.` });
   };
 
   const handlePurchaseHints = async (packId: string, amount: number) => {

@@ -77,6 +77,50 @@ body {
     --sidebar-border: 262 20% 25%;
     --sidebar-ring: 262 70% 75%;
   }
+
+  .noir {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 14%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 80%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 50%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 0% 80%;
+  }
+
+  .cyberpunk {
+    --background: 220 50% 5%;
+    --foreground: 180 100% 85%;
+    --card: 220 40% 10%;
+    --card-foreground: 180 100% 85%;
+    --popover: 220 50% 3%;
+    --popover-foreground: 180 100% 85%;
+    --primary: 300 100% 70%;
+    --primary-foreground: 300 50% 10%;
+    --secondary: 220 30% 20%;
+    --secondary-foreground: 180 100% 85%;
+    --muted: 220 30% 15%;
+    --muted-foreground: 180 50% 60%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 220 50% 5%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 300 100% 70%;
+    --input: 220 30% 20%;
+    --ring: 300 100% 80%;
+  }
 }
 
 @layer base {
