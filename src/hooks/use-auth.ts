@@ -10,7 +10,6 @@ import {
   useCallback,
 } from 'react';
 import {
-  getAuth,
   onAuthStateChanged,
   User,
   signOut,
@@ -19,7 +18,7 @@ import {
   updateProfile,
   deleteUser,
 } from 'firebase/auth';
-import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -120,7 +119,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await updateProfile(user, { displayName: newName });
         const userRef = doc(firestore, 'userProfiles', user.uid);
+        
+        const userDoc = await getDoc(userRef);
+        if(!userDoc.exists()) {
+            throw new Error("User profile not found");
+        }
+
         const updateData = { username: newName };
+        
         updateDoc(userRef, updateData)
             .catch((serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -131,7 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 errorEmitter.emit('permission-error', permissionError);
             });
         // Force a refresh of the user object to reflect the new name
-        setUser(auth.currentUser);
+        if (auth.currentUser) {
+            await auth.currentUser.reload();
+            setUser(auth.currentUser);
+        }
       } catch (error) {
         console.error("Error updating username:", error);
       }
@@ -157,9 +166,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, firestore, router]);
 
+  const value = { user, loading, login, signup, logout, updateUsername, deleteAccount };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUsername, deleteAccount }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

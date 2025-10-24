@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Target, Edit, Trash2, Save } from "lucide-react";
+import { Trophy, Star, Target, Edit, Save, Trash2, X } from "lucide-react";
 import type { ImagePlaceholder } from "@/lib/placeholder-images";
 import placeholderData from '@/lib/placeholder-images.json';
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -54,7 +54,7 @@ export default function ProfilePage() {
   }, []);
 
   const handleSave = async () => {
-    if (newUsername.trim() === "") {
+    if (!newUsername || newUsername.trim() === "") {
         toast({
             variant: "destructive",
             title: "Invalid Username",
@@ -79,7 +79,7 @@ export default function ProfilePage() {
     router.push("/signup");
   };
 
-  const loading = authLoading || profileLoading || !user;
+  const loading = authLoading || profileLoading;
 
   if (loading || !userProfile) {
     return (
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                   <div className="flex gap-2 items-center">
                     <Input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="text-2xl font-bold font-headline h-auto p-1 text-center" />
                     <Button size="icon" onClick={handleSave}><Save className="h-5 w-5"/></Button>
-                    <Button size="icon" variant="outline" onClick={() => {setIsEditing(false); setNewUsername(userProfile.username)}}><Trash2 className="h-5 w-5"/></Button>
+                    <Button size="icon" variant="outline" onClick={() => {setIsEditing(false); setNewUsername(userProfile.username)}}><X className="h-5 w-5"/></Button>
                   </div>
                 ) : (
                   <h1 className="text-4xl font-bold font-headline">{userProfile.username}</h1>
