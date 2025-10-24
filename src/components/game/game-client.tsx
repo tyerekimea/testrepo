@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
@@ -126,7 +127,7 @@ export default function GameClient() {
     });
   }, [wordData, guessedLetters.correct, hint]);
 
-  const updateFirestoreUser = async (newScore: number, newLevel: number) => {
+  const updateFirestoreUser = useCallback(async (newScore: number, newLevel: number) => {
     if (user) {
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, {
@@ -135,10 +136,10 @@ export default function GameClient() {
         updatedAt: new Date().toISOString(),
       });
     }
-  };
+  }, [user, firestore]);
 
   useEffect(() => {
-    if (!wordData) return;
+    if (!wordData || gameState !== 'playing') return;
     const isWon = wordData.word.split('').every(char => guessedLetters.correct.includes(char.toLowerCase()));
     if (isWon) {
       setGameState("won");
@@ -155,7 +156,7 @@ export default function GameClient() {
     } else if (guessedLetters.incorrect.length >= MAX_INCORRECT_TRIES) {
       setGameState("lost");
     }
-  }, [guessedLetters, wordData, level, score, user, sounds, playSound, startNewGame]);
+  }, [guessedLetters, wordData, level, user, sounds, playSound, startNewGame, updateFirestoreUser, gameState]);
 
 
   const incorrectTriesLeft = MAX_INCORRECT_TRIES - guessedLetters.incorrect.length;
