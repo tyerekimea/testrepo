@@ -1,92 +1,132 @@
 /**
- * @fileoverview Firestore Security Rules for Definition Detective.
+ * @file Firestore Security Rules for Definition Detective
+ * @version Prototyping
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Each user has exclusive access
- * to their profile data and associated game sessions.
+ * @Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles and game sessions,
+ * allowing users to only access their own data. Leaderboard entries are publicly readable,
+ * but can only be created by authenticated users.
  *
- * Data Structure:
- * - User profiles are stored in `/users/{userId}`, where `{userId}` matches the Firebase Auth UID.
- * - Game sessions are stored in `/users/{userProfileId}/game_sessions/{gameSessionId}`,
- *   where `userProfileId` matches the Firebase Auth UID of the user who owns the session.
+ * @Data Structure:
+ * - /userProfiles/{userProfileId}: Stores user profile information.
+ * - /userProfiles/{userProfileId}/gameSessions/{gameSessionId}: Stores game session data for a specific user.
+ * - /leaderboardEntries/{leaderboardEntryId}: Stores leaderboard entries, publicly readable.
  *
- * Key Security Decisions:
- * - Users can only access their own profile data and game sessions.
- * - Listing user profiles is disallowed to protect user privacy.
- * - The `userProfileId` is denormalized into the `GameSession` documents to remove authorization dependencies.
+ * @Key Security Decisions:
+ * - User profiles and game sessions are strictly owned by the user identified in the path.
+ * - Leaderboard entries are publicly readable but require authentication to create, update or delete.
+ * - Data validation is minimal during this prototyping phase, focusing on relational integrity and
+ *   ownership constraints only.
  *
- * Denormalization for Authorization:
- * - The `GameSession` documents contain a `userProfileId` field, which is a denormalized copy
- *   of the owning user's UID. This allows for direct ownership checks without requiring
- *   additional `get()` calls to the `/users/{userId}` document.
- *
- * Structural Segregation:
- * - User profiles and game sessions are stored in separate collections to maintain
- *   clear ownership boundaries and optimize query performance.
+ * @Denormalization for Authorization:
+ *  None needed for this specific structure.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile data.
-     * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their profile with `id` set to 'user123'.
-     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their profile.
-     * @deny (create) User with UID 'user456' cannot create a profile with `id` set to 'user123'.
-     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete the profile of user 'user123'.
-     * @deny (list) All users are denied listing user profiles.
-     * @principle Enforces document ownership for all operations and validates relational integrity on create.
+     * @description Secure user profile data, accessible only to the user.
+     * @path /userProfiles/{userProfileId}
+     * @allow (create) - User with ID 'user123' creates their profile.
+     *    request.auth.uid == 'user123' && request.resource.data.id == 'user123'
+     * @allow (get) - User with ID 'user123' reads their profile.
+     *    request.auth.uid == 'user123'
+     * @allow (update) - User with ID 'user123' updates their profile.
+     *    request.auth.uid == 'user123' && resource.data.id == 'user123'
+     * @allow (delete) - User with ID 'user123' deletes their profile.
+     *    request.auth.uid == 'user123' && resource.data.id == 'user123'
+     * @deny (create) - User with ID 'user456' attempts to create profile for 'user123'.
+     *    request.auth.uid == 'user456' && request.resource.data.id == 'user123'
+     * @principle Enforces document ownership for writes.
      */
-    match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
+    match /userProfiles/{userProfileId} {
+      // Read Permissions
+      allow get: if isSignedIn() && isOwner(userProfileId);
       allow list: if false;
 
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      // Write Permissions
+      allow create: if isSignedIn() && isOwner(userProfileId) && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(userProfileId) && (request.resource.data.id == resource.data.id);
+      allow delete: if isSignedIn() && isExistingOwner(userProfileId);
     }
 
     /**
-     * @description Controls access to game session data for a specific user.
-     * @path /users/{userProfileId}/game_sessions/{gameSessionId}
-     * @allow (create) User with UID 'user123' can create a game session with `userProfileId` set to 'user123'.
-     * @allow (get, list, update, delete) User with UID 'user123' can read, list, update, and delete their own game sessions.
-     * @deny (create) User with UID 'user456' cannot create a game session for user 'user123'.
-     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete game sessions for user 'user123'.
-     * @principle Enforces document ownership, validates relational integrity on create, and ensures the document exists before updates/deletes.
+     * @description Secure game session data, accessible only to the owning user.
+     * @path /userProfiles/{userProfileId}/gameSessions/{gameSessionId}
+     * @allow (create) - User 'user123' creates a game session under their profile.
+     *    request.auth.uid == 'user123' && request.resource.data.userProfileId == 'user123'
+     * @allow (get) - User 'user123' reads a game session under their profile.
+     *    request.auth.uid == 'user123'
+     * @allow (update) - User 'user123' updates a game session under their profile.
+     *    request.auth.uid == 'user123' && resource.data.userProfileId == 'user123'
+     * @allow (delete) - User 'user123' deletes a game session under their profile.
+     *    request.auth.uid == 'user123' && resource.data.userProfileId == 'user123'
+     * @deny (create) - User 'user456' attempts to create a game session for 'user123'.
+     *    request.auth.uid == 'user456' && request.resource.data.userProfileId == 'user123'
+     * @principle Enforces document ownership and relational integrity for game sessions.
      */
-    match /users/{userProfileId}/game_sessions/{gameSessionId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+    match /userProfiles/{userProfileId}/gameSessions/{gameSessionId} {
+      // Read Permissions
+      allow get: if isSignedIn() && isOwner(userProfileId);
+      allow list: if isSignedIn() && isOwner(userProfileId);
 
-      function isOwner(userProfileId) {
-        return isSignedIn() && request.auth.uid == userProfileId;
-      }
+      // Write Permissions
+      allow create: if isSignedIn() && isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isSignedIn() && isExistingOwner(userProfileId) && (request.resource.data.userProfileId == resource.data.userProfileId);
+      allow delete: if isSignedIn() && isExistingOwner(userProfileId);
+    }
 
-       function isExistingOwner(userProfileId) {
-        return isOwner(userProfileId) && resource != null;
-      }
+    /**
+     * @description Leaderboard entries are publicly readable, but only authenticated users can create, update or delete them.
+     * @path /leaderboardEntries/{leaderboardEntryId}
+     * @allow (get) - Any user can read a leaderboard entry.
+     * @allow (list) - Any user can list leaderboard entries.
+     * @allow (create) - Authenticated user creates a leaderboard entry.
+     *    request.auth != null
+     * @deny (delete) - Unauthenticated user attempts to delete a leaderboard entry.
+     *    request.auth == null
+     * @principle Allows public reads while restricting writes to authenticated users.
+     */
+    match /leaderboardEntries/{leaderboardEntryId} {
+      // Read Permissions
+      allow get: if true;
+      allow list: if true;
 
-      allow get: if isOwner(userProfileId);
-      allow list: if isOwner(userProfileId);
+      // Write Permissions
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && false; // Leaderboard entries are immutable after creation
+      allow delete: if isSignedIn() && false; // Leaderboard entries cannot be deleted after creation
+    }
 
-      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
-      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
-      allow delete: if isExistingOwner(userProfileId);
+    // =========================================================================
+    // Helper Functions
+    // =========================================================================
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the requesting user is the owner of the resource.
+     * @param {string} userId - The user ID to check against.
+     * @return {boolean} True if the requesting user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the requesting user is the owner of the resource and the resource exists.
+     * @param {string} userId - The user ID to check against.
+     * @return {boolean} True if the requesting user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
   }
 }
