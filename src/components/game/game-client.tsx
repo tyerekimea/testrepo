@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getHintAction, getSoundAction } from "@/lib/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth.tsx";
+import { useAuth } from "@/hooks/use-auth";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, increment, getDoc } from "firebase/firestore";
 import { useSound } from "@/hooks/use-sound";
@@ -182,7 +182,7 @@ export default function GameClient() {
       const lettersToRevealCount = revealedByHint.length + 2;
       const { hint: newHint, error } = await getHintAction({
         word: wordData.word,
-        incorrectGuesses: guessedLetters.incorrect,
+        incorrectGuesses: guessedLetters.incorrect.join(''),
         lettersToReveal: lettersToRevealCount,
       });
 
@@ -296,7 +296,7 @@ export default function GameClient() {
   const allLettersGuessed = wordData && (wordData.word.length === (guessedLetters.correct.length + revealedByHint.length));
   const hintDisabled = isHintLoading || allLettersGuessed || !user || (userProfile?.hints ?? 0) === 0;
 
-  const shareText = `I just reached level ${level} in Definition Detective with a score of ${score.toLocaleString()}! Can you beat me?`;
+  const shareText = "I'm playing Definition Detective! Can you beat my high score?";
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8">
@@ -340,17 +340,6 @@ export default function GameClient() {
           <AlertDescription>
             {gameState === 'won' ? `The word was "${wordData?.word}". Loading next case...` : `The word was "${wordData?.word}". Better luck next time.`}
           </AlertDescription>
-          
-          {gameState === 'won' && (
-            <div className="mt-4 space-y-3">
-              <p className="text-sm font-medium flex items-center justify-center gap-2"><Share className="h-4 w-4" /> Share Your Victory!</p>
-              <div className="flex justify-center gap-2">
-                <ShareButton platform="whatsapp" text={shareText} url={appUrl} />
-                <ShareButton platform="facebook" text={shareText} url={appUrl} />
-                <ShareButton platform="x" text={shareText} url={appUrl} />
-              </div>
-            </div>
-          )}
 
           {gameState === 'lost' && (
              <div className="mt-4 flex justify-center gap-4">
@@ -378,6 +367,15 @@ export default function GameClient() {
         </>
       )}
 
+      <div className="mt-12 pt-8 border-t border-dashed">
+        <p className="text-sm font-medium flex items-center justify-center gap-2 mb-4 text-muted-foreground"><Share className="h-4 w-4" /> Share The Game!</p>
+        <div className="flex justify-center gap-2">
+          <ShareButton platform="whatsapp" text={shareText} url={appUrl} />
+          <ShareButton platform="facebook" text={shareText} url={appUrl} />
+          <ShareButton platform="x" text={shareText} url={appUrl} />
+        </div>
+      </div>
+
       <AlertDialog open={isWatchingAd}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -397,5 +395,3 @@ export default function GameClient() {
     </div>
   );
 }
-
-    
