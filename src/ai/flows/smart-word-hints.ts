@@ -1,18 +1,11 @@
 'use server';
 
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+
 /**
- * @fileOverview This file defines a Genkit flow for providing smart word hints based on previous incorrect guesses.
- *
- * The flow uses an LLM to determine the most helpful letters to reveal in a word puzzle hint, considering the letters the player has already tried.
- *
- * - `getSmartHint` - A function that takes the word, incorrect guesses and the number of letters to reveal as input and returns a smart hint.
- * - `SmartHintInput` - The input type for the `getSmartHint` function.
- * - `SmartHintOutput` - The return type for the `getSmartHint` function.
+ * Input Schema — defines what the model receives.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
 const SmartHintInputSchema = z.object({
   word: z.string().describe('The word to provide a hint for.'),
   incorrectGuesses: z.string().describe('The letters the player has already guessed incorrectly.'),
@@ -20,46 +13,80 @@ const SmartHintInputSchema = z.object({
 });
 export type SmartHintInput = z.infer<typeof SmartHintInputSchema>;
 
+/**
+ * Output Schema — defines what the model returns.
+ */
 const SmartHintOutputSchema = z.object({
   hint: z.string().describe('The smart hint, with revealed letters and underscores for the rest.'),
 });
 export type SmartHintOutput = z.infer<typeof SmartHintOutputSchema>;
 
-export async function getSmartHint(input: SmartHintInput): Promise<SmartHintOutput> {
-  return smartHintFlow(input);
-}
-
+/**
+ * The AI prompt — guides Gemini on what to produce.
+ */
 const smartHintPrompt = ai.definePrompt({
   name: 'smartHintPrompt',
-  input: {schema: SmartHintInputSchema},
-  output: {schema: SmartHintOutputSchema},
-  prompt: `You are an AI assistant designed to provide smart hints for word puzzles.
+  input: { schema: SmartHintInputSchema },
+  output: { schema: SmartHintOutputSchema },
+  prompt: `
+You are an AI assistant that helps players with smart word puzzle hints.
 
-The word to provide a hint for is: {{{word}}}
-The letters the player has already guessed incorrectly are: {{{incorrectGuesses}}}
-The number of letters to reveal in the hint is: {{{lettersToReveal}}}
+Given:
+- Word: "{{{word}}}"
+- Incorrect guesses: "{{{incorrectGuesses}}}"
+- Number of letters to reveal: "{{{lettersToReveal}}}"
 
-Considering the word and the incorrect guesses, determine the most helpful letters to reveal to the player.
+Rules:
+1. Reveal only the specified number of letters.
+2. Do not reveal letters that were guessed incorrectly.
+3. Replace unrevealed letters with underscores.
+4. Return your response **ONLY** in valid JSON format, e.g.:
 
-Return a hint where the revealed letters are shown and the rest of the letters are represented by underscores.
-For example, if the word is "example", incorrect guesses are "xyz", and letters to reveal is 2, the hint should be "e_a__p_e".
+{
+  "hint": "e_a__p_e"
+}
 
-Make sure to NOT reveal any letters which are part of incorrect guesses.
-
-Hint:`,
+Now, generate the hint:
+`,
 });
 
+/**
+ * The flow — defines how the AI is called and what it returns.
+ */
 const smartHintFlow = ai.defineFlow(
   {
     name: 'smartHintFlow',
     inputSchema: SmartHintInputSchema,
     outputSchema: SmartHintOutputSchema,
   },
-  async input => {
-    const response = await smartHintPrompt(input);
-    const output = response.output;
-    return {
-      hint: output?.hint ?? '',
-    };
+  async (input) => {
+    try {
+      const response = await smartHintPrompt(input);
+
+      // 🧩 Safely handle both structured and plain text responses
+      let hintText = '';
+      if (typeof response.output === 'string') {
+        try {
+          const parsed = JSON.parse(response.output);
+          hintText = parsed.hint ?? '';
+        } catch {
+          hintText = response.output;
+        }
+      } else if (response.output?.hint) {
+        hintText = response.output.hint;
+      }
+
+      return { hint: hintText.trim() };
+    } catch (error) {
+      console.error('❌ Smart hint flow failed:', error);
+      return { hint: 'Sorry, no hint available right now.' };
+    }
   }
 );
+
+/**
+ * Export a direct callable helper for your app logic.
+ */
+export async function getSmartHint(input: SmartHintInput): Promise<SmartHintOutput> {
+  return smartHintFlow(input);
+}
