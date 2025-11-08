@@ -8,10 +8,11 @@ const ShareButton = ({ platform, text }: { platform: 'whatsapp' | 'facebook' | '
     const [appUrl, setAppUrl] = useState("");
 
     useEffect(() => {
+        // This code will only run on the client, after the component has mounted.
         if (typeof window !== "undefined") {
             setAppUrl(window.location.origin);
         }
-    }, []);
+    }, []); // The empty dependency array ensures this runs only once.
 
     const platforms = {
         whatsapp: {
