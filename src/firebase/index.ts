@@ -14,8 +14,9 @@ export function initializeFirebase() {
   let firebaseApp;
   // In a deployed Firebase App Hosting environment, the SDK is automatically configured.
   // In a local environment, we use the firebaseConfig object.
+  // The NEXT_PUBLIC_USE_FIREBASE_EMULATOR is set by the development environment.
   if (process.env.NODE_ENV === 'production') {
-      firebaseApp = initializeApp();
+      firebaseApp = initializeApp({});
   } else {
       firebaseApp = initializeApp(firebaseConfig);
   }
