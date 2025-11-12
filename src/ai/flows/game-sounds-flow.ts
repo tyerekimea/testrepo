@@ -68,7 +68,9 @@ const gameSoundFlow = ai.defineFlow(
     const { media } = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
       prompt: query,
-      responseModalities: ['AUDIO'],
+      config: {
+        responseModalities: ['AUDIO'],
+      },
       speechConfig: {
         voiceConfig: {
           prebuiltVoiceConfig: { voiceName: 'Algenib' },
