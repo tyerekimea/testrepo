@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
-import { getWordByDifficulty, type WordData, getRankForScore } from "@/lib/game-data";
+import { type WordData, getRankForScore } from "@/lib/game-data";
+import { generateWord } from "@/ai/flows/generate-word-flow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Keyboard } from "@/components/game/keyboard";
@@ -38,7 +39,7 @@ export default function GameClient() {
   const firestore = useFirestore();
   const [gameState, setGameState] = useState<GameState>("playing");
   const [wordData, setWordData] = useState<WordData | null>(null);
-  const [definition, setDefinition] = useState<string>("");
+  const [isGameLoading, setIsGameLoading] = useState(true);
   const [guessedLetters, setGuessedLetters] = useState<{ correct: string[]; incorrect: string[] }>({ correct: [], incorrect: [] });
   const [hint, setHint] = useState<string | null>(null);
   const [revealedByHint, setRevealedByHint] = useState<string[]>([]);
@@ -70,31 +71,48 @@ export default function GameClient() {
     return 'hard';
   };
 
-  const startNewGame = useCallback((currentLevel: number, currentWord?: string) => {
+  const startNewGame = useCallback(async (currentLevel: number, currentWord?: string) => {
+    setIsGameLoading(true);
     const difficulty = getDifficultyForLevel(currentLevel);
-    let newWordData: WordData;
-    do {
-      newWordData = getWordByDifficulty(difficulty);
-    } while (newWordData.word === currentWord);
+    let newWordData: WordData | null = null;
     
-    setWordData(newWordData);
-    setDefinition(newWordData.definition);
-    setGuessedLetters({ correct: [], incorrect: [] });
-    setHint(null);
-    setRevealedByHint([]);
-    setGameState("playing");
+    try {
+        let attempts = 0;
+        while(attempts < 3) { // Retry logic in case AI returns the same word
+            const result = await generateWord({ difficulty });
+            if (result.word.toLowerCase() !== currentWord?.toLowerCase()) {
+                newWordData = { ...result, difficulty };
+                break;
+            }
+            attempts++;
+        }
+        if (!newWordData) {
+            throw new Error("Failed to generate a new word.");
+        }
+    } catch (error) {
+        console.error("Failed to generate word, falling back to static list.", error);
+        toast({
+            variant: "destructive",
+            title: "Connection Error",
+            description: "Could not generate a new word. Please check your connection."
+        });
+        // As a fallback, you could use a static list here if needed
+        newWordData = null; // Or get from a static list
+    }
+
+    if(newWordData) {
+        setWordData(newWordData);
+        setGuessedLetters({ correct: [], incorrect: [] });
+        setHint(null);
+        setRevealedByHint([]);
+        setGameState("playing");
+    }
+    setIsGameLoading(false);
   }, []);
 
   useEffect(() => {
-    // This ensures getWordByDifficulty (with Math.random) only runs on the client.
     startNewGame(level);
-  }, []);
-  
-  useEffect(() => {
-    if(gameState === 'playing') {
-      startNewGame(level);
-    }
-  }, [level]);
+  }, [level, startNewGame]);
 
 
   const handleGuess = useCallback((letter: string) => {
@@ -177,7 +195,7 @@ export default function GameClient() {
   const displayedWord = useMemo(() => {
     if (!wordData) return [];
     const wordChars = wordData.word.split('');
-    return wordChars.map((char, index) => {
+    return wordChars.map((char) => {
       const lowerChar = char.toLowerCase();
       const isGuessed = guessedLetters.correct.includes(lowerChar);
       const isHinted = revealedByHint.includes(lowerChar);
@@ -235,6 +253,7 @@ export default function GameClient() {
       
       setTimeout(() => {
         setLevel(newLevel);
+        // startNewGame is now async, but we don't need to await it here
         startNewGame(newLevel, wordData.word);
       }, 3000);
   
@@ -244,9 +263,8 @@ export default function GameClient() {
     }
   }, [guessedLetters, wordData, level, playSound, startNewGame, updateFirestoreUser, gameState, displayedWord, hint, revealedByHint]);
 
-  if (!wordData) {
-    // Render a loading state or null until the word is selected on the client
-    return <div className="text-center p-8">Loading your next case...</div>;
+  if (isGameLoading || !wordData) {
+    return <div className="text-center p-8 animate-pulse">Loading your next case...</div>;
   }
   
   const incorrectTriesLeft = MAX_INCORRECT_TRIES - guessedLetters.incorrect.length;
@@ -276,7 +294,7 @@ export default function GameClient() {
           <CardTitle className="text-center">Definition</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-center text-lg italic text-muted-foreground p-4 bg-muted/50 rounded-md">{definition}</p>
+          <p className="text-center text-lg italic text-muted-foreground p-4 bg-muted/50 rounded-md">{wordData.definition}</p>
         </CardContent>
       </Card>
 
