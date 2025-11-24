@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
 import { type WordData, getRankForScore } from "@/lib/game-data";
 import { generateWord } from "@/ai/flows/generate-word-flow";
+import { useHintAction } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Keyboard } from "@/components/game/keyboard";
 import { Lightbulb, RotateCw, XCircle, Award, PartyPopper, Clapperboard, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useHintAction } from "@/lib/actions";
 import { useGameSounds } from "@/hooks/use-game-sounds";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";

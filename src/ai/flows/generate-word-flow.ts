@@ -1,29 +1,13 @@
-
 'use server';
-/**
- * @fileOverview A flow to generate a word and its definition for the game.
- *
- * - generateWord - A function that generates a new word puzzle.
- * - GenerateWordInput - The input type for the generateWord function.
- * - GenerateWordOutput - The return type for the generateWord function.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
-
-const GenerateWordInputSchema = z.object({
-  difficulty: z
-    .enum(['easy', 'medium', 'hard'])
-    .describe('The difficulty level for the word to be generated.'),
-});
-export type GenerateWordInput = z.infer<typeof GenerateWordInputSchema>;
-
-const GenerateWordOutputSchema = z.object({
-  word: z.string().describe('The generated word.'),
-  definition: z.string().describe('The definition of the generated word.'),
-});
-export type GenerateWordOutput = z.infer<typeof GenerateWordOutputSchema>;
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
+import {
+  GenerateWordInput,
+  GenerateWordOutput,
+  GenerateWordInputSchema,
+  GenerateWordOutputSchema,
+} from '@/ai/schemas/word';
 
 export async function generateWord(
   input: GenerateWordInput
@@ -33,14 +17,16 @@ export async function generateWord(
 
 const prompt = ai.definePrompt({
   name: 'generateWordPrompt',
-  input: {schema: GenerateWordInputSchema},
-  output: {schema: GenerateWordOutputSchema},
-  model: googleAI.model('gemini-1.5-pro'),
-  config: {
-    generationConfig: {
-        responseMimeType: 'application/json',
-    },
+  input: { schema: GenerateWordInputSchema },
+  output: { schema: GenerateWordOutputSchema },
+
+  // 🔥 FIXED — old: gemini-pro (no longer exists)
+  model: googleAI.model('gemini-1.5-flash'),
+
+  generationConfig: {
+    responseMimeType: 'application/json',
   },
+
   prompt: `You are an expert lexicographer and puzzle master for a word game.
 
 Your task is to generate a single word and its corresponding definition based on the requested difficulty level. The word should be challenging but fair for the given level.
@@ -59,7 +45,8 @@ const generateWordFlow = ai.defineFlow(
     outputSchema: GenerateWordOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const response = await prompt(input);
+    const output = response.output;
     if (!output) {
       throw new Error('Failed to generate word from AI.');
     }

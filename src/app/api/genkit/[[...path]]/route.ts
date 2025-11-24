@@ -1,29 +1,20 @@
+import { genkit } from "genkit";
+import { googleAI } from "@genkit-ai/google-genai";
+import { NextRequest } from "next/server";
+import { GENKIT_CLIENT_HEADER } from "genkit/next";
+import { run } from "@genkit-ai/next";
 
-import { ai } from '@/ai/genkit';
-import { NextRequest, NextResponse } from 'next/server';
-import '@/ai/flows/game-sounds-flow';
-import '@/ai/flows/generate-word-flow';
+import "@/ai/flows/game-sounds-flow";
+import "@/ai/flows/generate-word-flow";
+import "@/ai/flows/generate-hints";
 
-export async function POST(request: NextRequest) {
-  try {
-    const { flowId, input } = await request.json();
+genkit({
+  plugins: [googleAI()],
+});
 
-    if (!flowId) {
-      return NextResponse.json({ error: 'Missing `flowId` parameter.' }, { status: 400 });
-    }
-
-    const flow = (ai as any).lookup(flowId);
-    if (!flow) {
-        return NextResponse.json({ error: `Flow '${flowId}' not found.` }, { status: 404 });
-    }
-
-    const result = await (ai as any).run(flow, input ?? {});
-    return NextResponse.json(result, { status: 200 });
-  } catch (err: any) {
-    console.error('🔥 Error running Genkit flow:', err);
-    return NextResponse.json(
-      { error: err?.message || 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
+export async function POST(req: NextRequest) {
+  const isGenkitClient = req.headers.has(GENKIT_CLIENT_HEADER);
+  return await run(req.json(), {
+    isGenkitClient,
+  });
 }

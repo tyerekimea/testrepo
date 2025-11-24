@@ -1,27 +1,23 @@
 'use server';
 /**
- * @fileOverview Generates game sound effects using Text-to-Speech.
- *
- * - getGameSound - A function that generates a sound effect.
- * - GameSoundInput - The input type for the getGameSound function.
- * - GameSoundOutput - The return type for the getGameSound function.
+ * Generates game sound effects using Gemini TTS.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import wav from 'wav';
-import {googleAI} from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const GameSoundInputSchema = z
   .string()
-  .describe(
-    'The text to convert to a sound effect (e.g., "ding", "buzz", "level up").'
-  );
+  .describe('A text-like sound name such as "ding", "buzz", "level up".');
+
 export type GameSoundInput = z.infer<typeof GameSoundInputSchema>;
 
 const GameSoundOutputSchema = z.object({
-  soundDataUri: z.string().describe('The generated sound as a base64 data URI.'),
+  soundDataUri: z.string().describe('The generated sound as a base64 WAV.'),
 });
+
 export type GameSoundOutput = z.infer<typeof GameSoundOutputSchema>;
 
 export async function getGameSound(
@@ -44,13 +40,10 @@ async function toWav(
     });
 
     const bufs: Buffer[] = [];
+
     writer.on('error', reject);
-    writer.on('data', function (d) {
-      bufs.push(d);
-    });
-    writer.on('end', function () {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
+    writer.on('data', d => bufs.push(d));
+    writer.on('end', () => resolve(Buffer.concat(bufs).toString('base64')));
 
     writer.write(pcmData);
     writer.end();
@@ -64,26 +57,28 @@ const gameSoundFlow = ai.defineFlow(
     outputSchema: GameSoundOutputSchema,
   },
   async query => {
-    const {media} = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+    const { media } = await ai.generate({
+      model: googleAI.models['gemini-1.5-flash-tts'], // ✅ Updated TTS model
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'},
+            prebuiltVoiceConfig: { voiceName: 'Algenib' },
           },
         },
       },
       prompt: query,
     });
-    if (!media) {
-      throw new Error('no media returned');
-    }
+
+    if (!media) throw new Error('No audio returned from model.');
+
     const audioBuffer = Buffer.from(
       media.url.substring(media.url.indexOf(',') + 1),
       'base64'
     );
+
     const wavBase64 = await toWav(audioBuffer);
+
     return {
       soundDataUri: 'data:audio/wav;base64,' + wavBase64,
     };

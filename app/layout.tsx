@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import '../src/app/globals.css';
+import './globals.css';
 import Providers from '@/components/providers';
 import Header from '@/components/header';
 
@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description: 'An endless word puzzle game with a twist.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
