@@ -11,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0ea5b7" />
+      </head>
       <body className="font-body antialiased bg-background text-foreground">
         <Providers>
           <div className="relative flex min-h-screen w-full flex-col">

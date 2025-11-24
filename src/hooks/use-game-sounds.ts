@@ -2,6 +2,10 @@
 
 import { useCallback } from 'react';
 
+// Local alias for OscillatorType to satisfy linting in environments
+// where the DOM lib types may not be picked up by ESLint.
+type OscillatorType = 'sine' | 'square' | 'sawtooth' | 'triangle' | 'custom';
+
 export type GameSoundInput = {
   soundType: 'correct' | 'incorrect' | 'win' | 'hint' | 'click';
   intensity?: 'low' | 'medium' | 'high';
