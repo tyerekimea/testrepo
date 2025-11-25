@@ -1,7 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import wav from 'wav';
-import { googleAI } from '@genkit-ai/google-genai';  // ✅ CORRECT import
+import { googleAI } from '@genkit-ai/google-genai';
 
 const GameSoundInputSchema = z
   .string()
@@ -45,9 +45,10 @@ const gameSoundFlow = ai.defineFlow(
   },
   async query => {
     const { media } = await ai.generate({
-      // ✅ Correct TTS model name for YOUR plugin version
-      model: googleAI.model('googleai/gemini-2.0-flash-tts'),
+      // Stable v1 TTS model (models/ prefix)
+      model: googleAI.model('models/gemini-1.5-flash-tts'),
 
+      // For TTS, responseModalities and speechConfig are used by Genkit -> plugin
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
@@ -55,6 +56,7 @@ const gameSoundFlow = ai.defineFlow(
             prebuiltVoiceConfig: { voiceName: 'Algenib' },
           },
         },
+        // Do not include responseMimeType here (v1 doesn't accept it)
       },
 
       prompt: query,

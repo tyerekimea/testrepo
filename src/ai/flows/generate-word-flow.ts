@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -21,8 +20,15 @@ const prompt = ai.definePrompt({
   input: { schema: GenerateWordInputSchema },
   output: { schema: GenerateWordOutputSchema },
 
-  // 🔥 FIXED — old: gemini-pro (no longer exists)
-  model: googleAI.model('gemini-1.5-pro-002'),
+  // STABLE v1 model (explicit 'models/' prefix)
+  model: googleAI.model('models/gemini-1.5-pro'),
+
+  // Only v1-compatible generation fields (no responseMimeType)
+  generationConfig: {
+    temperature: 0.7,
+    maxOutputTokens: 256,
+    topP: 0.95,
+  },
 
   prompt: `You are an expert lexicographer and puzzle master for a word game.
 
@@ -32,7 +38,7 @@ Difficulty: {{{difficulty}}}
 
 The definition should be clear, concise, and in a dictionary style. Avoid overly obscure words unless the difficulty is 'hard'.
 
-Produce the JSON response now.`,
+Return a JSON object matching the required schema exactly.`,
 });
 
 const generateWordFlow = ai.defineFlow(
@@ -42,7 +48,8 @@ const generateWordFlow = ai.defineFlow(
     outputSchema: GenerateWordOutputSchema,
   },
   async input => {
-    const { output } = await prompt(input);
+    const response = await prompt(input);
+    const output = response.output;
     if (!output) {
       throw new Error('Failed to generate word from AI.');
     }
