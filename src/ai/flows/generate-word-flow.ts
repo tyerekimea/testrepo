@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -18,7 +19,7 @@ export async function generateWord(
 const prompt = ai.definePrompt({
   name: 'generateWordPrompt',
   input: { schema: GenerateWordInputSchema },
-  output: { schema: GenerateWordOutputSchema },
+  output: { schema: GenerateWordOutputSchema, format: 'json' },
   model: googleAI.model('gemini-1.5-pro'),
   prompt: `You are an expert lexicographer and puzzle master for a word game.
 
