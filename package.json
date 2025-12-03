@@ -8,12 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
-    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts"
+    "genkit:dev": "genkit start -- tsx studio/src/ai/dev.ts",
+    "genkit:watch": "genkit start -- tsx --watch studio/src/ai/dev.ts"
   },
   "dependencies": {
-    "@genkit-ai/google-genai": "0.5.1",
-    "@genkit-ai/next": "1.0.0",
+    "@genkit-ai/google-genai": "^1.0.0-rc.3",
+    "@genkit-ai/next": "^1.0.0-rc.3",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -42,7 +42,7 @@
     "embla-carousel-react": "^8.1.7",
     "firebase": "^10.12.4",
     "firebase-admin": "^12.2.0",
-    "genkit": "1.0.0",
+    "genkit": "^1.0.0-rc.3",
     "lucide-react": "^0.417.0",
     "next": "14.2.5",
     "patch-package": "^8.0.0",
@@ -64,7 +64,7 @@
     "@types/wav": "^1.0.2",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
-    "genkit-cli": "1.0.0",
+    "genkit-cli": "^1.0.0-rc.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
