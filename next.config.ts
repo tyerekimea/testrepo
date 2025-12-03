@@ -3,7 +3,6 @@ import type {NextConfig} from 'next';
 require('dotenv').config();
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -32,11 +31,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  allowedDevOrigins: [
-    "http://localhost:9003",
-    "https://*.cloudworkstations.dev",
-    "https://*.firebase.studio",
-  ]
+  experimental: {
+    allowedDevOrigins: [
+        "http://localhost:9003",
+        "https://*.cloudworkstations.dev",
+        "https://*.firebase.studio",
+    ]
+  }
 };
 
 export default nextConfig;

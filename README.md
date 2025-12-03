@@ -16,5 +16,5 @@ To get started, run the development server:
 npm run dev
 ```
 
-Then open [http://localhost:9002](http://localhost:9002) in your browser.
+Then open [http://localhost:9003](http://localhost:9002) in your browser.
 # defdetective
