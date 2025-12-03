@@ -143,7 +143,7 @@ export default function Home() {
     startHintTransition(async () => {
       try {
         const result = await useHintAction({
-            userId: user?.uid,
+            userId: user ? user.uid : null,
             word: wordData.word,
             incorrectGuesses: guessedLetters.incorrect.join(''),
             lettersToReveal: revealedByHint.length + 1,
