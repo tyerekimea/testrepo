@@ -1,5 +1,6 @@
+
 import type {NextConfig} from 'next';
-import('dotenv').then(dotenv => dotenv.config());
+require('dotenv').config();
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -31,6 +32,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    allowedDevOrigins: [
+        "http://localhost:9003",
+        "https://*.cloudworkstations.dev",
+        "https://*.firebase.studio",
+    ]
+  }
 };
 
 export default nextConfig;
