@@ -22,7 +22,7 @@ function initAdminApp(): App {
   });
 }
 
-export async function useHintAction(data: GenerateHintInput & { userId?: string | null | undefined, isFree?: boolean }): Promise<{ success: boolean; message?: string; hint?: string; }> {
+export async function useHintAction(data: GenerateHintInput & { userId?: string | null, isFree?: boolean }): Promise<{ success: boolean; message?: string; hint?: string; }> {
   try {
     if (!data.isFree) {
       if (!data.userId) {
