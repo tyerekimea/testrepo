@@ -44,8 +44,9 @@ export const generateImageDescriptionFlow = ai.defineFlow(
 
     // Try multiple model candidates
     const candidates = [
-      'googleai/gemini-1.5-flash',
-      'googleai/gemini-1.5-pro',
+      'googleai/gemini-1.5-flash-latest',
+      'googleai/gemini-1.5-pro-latest',
+      'googleai/gemini-2.0-flash-exp',
       'googleai/gemini-pro'
     ];
 
