@@ -75,6 +75,7 @@ export default function Home() {
   };
 
   const startNewGame = useCallback(async (currentLevel: number, currentWord?: string) => {
+    console.log('[startNewGame] Starting new game at level:', currentLevel);
     setIsGameLoading(true);
     setGameState("playing");
     const difficulty = getDifficultyForLevel(currentLevel);
@@ -83,34 +84,41 @@ export default function Home() {
     try {
         let attempts = 0;
         while(attempts < 3) { 
+            console.log(`[startNewGame] Attempt ${attempts + 1} to generate word...`);
             const result = await generateWord({ difficulty });
+            console.log('[startNewGame] Generated word:', result.word);
             if (result.word.toLowerCase() !== currentWord?.toLowerCase()) {
                 newWordData = { ...result, difficulty };
                 break;
             }
+            console.log('[startNewGame] Word matches previous, trying again...');
             attempts++;
         }
         if (!newWordData) {
-            throw new Error("Failed to generate a new word.");
+            throw new Error("Failed to generate a new word after 3 attempts.");
         }
     } catch (error) {
-        console.error("Failed to generate word.", error);
+        console.error("[startNewGame] Failed to generate word:", error);
         toast({
             variant: "destructive",
             title: "Connection Error",
-            description: "Could not generate a new word. Please check your connection."
+            description: "Could not generate a new word. Please check your connection and API key."
         });
         newWordData = null;
     }
 
     if(newWordData) {
+        console.log('[startNewGame] Setting new word data:', newWordData.word);
         setWordData(newWordData);
         setGuessedLetters({ correct: [], incorrect: [] });
         setHint(null);
         setRevealedByHint([]);
         setVisualHint(null);
+    } else {
+        console.error('[startNewGame] No word data available, game cannot continue');
     }
     setIsGameLoading(false);
+    console.log('[startNewGame] Game loading complete');
   }, [toast]);
 
   useEffect(() => {

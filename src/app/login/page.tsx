@@ -16,6 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("alex.doe@example.com");
   const [password, setPassword] = useState("password");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -25,7 +26,12 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    setError(null);
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
+    }
   };
   
   if (loading || user) {
@@ -44,9 +50,24 @@ export default function LoginPage() {
           <CardDescription>
             Enter your email below to login to your account.
           </CardDescription>
+          <div className="mt-2 p-2 text-xs bg-muted rounded-md">
+            💡 You can <Link href="/" className="underline font-medium">play without an account</Link> - login is only needed to save your progress.
+          </div>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                {error}
+                {error.includes('Firebase is not configured') && (
+                  <div className="mt-2">
+                    <Link href="/" className="underline font-medium">
+                      Play without an account
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
