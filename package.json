@@ -11,7 +11,6 @@
     "genkit:dev": "genkit start -- tsx studio/src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch studio/src/ai/dev.ts"
   },
-  "type": "module",
   "dependencies": {
     "@genkit-ai/google-genai": "^1.0.0",
     "@genkit-ai/next": "^1.0.0",

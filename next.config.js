@@ -1,11 +1,10 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: [
-      "http://localhost:9003",
-      "https://*.cloudworkstations.dev",
-      "https://*.firebase.studio"
+    'http://localhost:9003',
+    'https://*.cloudworkstations.dev',
+    'https://*.firebase.studio',
   ],
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
@@ -13,4 +12,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
