@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Uncomment for mobile build (static export)
+  // output: 'export',
+  // images: {
+  //   unoptimized: true,
+  // },
+  // trailingSlash: true,
   experimental: {
     serverActions: {
       allowedOrigins: [
