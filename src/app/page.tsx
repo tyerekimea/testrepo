@@ -9,7 +9,7 @@ import { useHintAction } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Keyboard } from "@/components/game/keyboard";
-import { Lightbulb, RotateCw, XCircle, Award, PartyPopper, Clapperboard, Share } from "lucide-react";
+import { Lightbulb, RotateCw, XCircle, Award, PartyPopper, Clapperboard, Share, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameSounds } from "@/hooks/use-game-sounds";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; 
@@ -268,6 +268,7 @@ export default function Home() {
     const isWon = displayedWord.every(item => item.revealed);
     
     if (isWon) {
+      console.log('[Game] Player won! Starting transition to next level...');
       setGameState("won");
       playSound('win');
       
@@ -280,12 +281,18 @@ export default function Home() {
       }
       setScore(s => s + scoreGained);
       
-      const timeoutId = setTimeout(() => {
+      console.log(`[Game] Will start new game at level ${newLevel} in 3 seconds...`);
+      const timeoutId = setTimeout(async () => {
+        console.log('[Game] Timeout fired, starting new game...');
         setLevel(newLevel);
-        startNewGame(newLevel, wordData.word);
+        await startNewGame(newLevel, wordData.word);
+        console.log('[Game] New game started successfully');
       }, 3000);
       
-      return () => clearTimeout(timeoutId);
+      return () => {
+        console.log('[Game] Cleaning up timeout');
+        clearTimeout(timeoutId);
+      };
   
     } else if (guessedLetters.incorrect.length >= MAX_INCORRECT_TRIES) {
       setGameState("lost");
@@ -353,16 +360,41 @@ export default function Home() {
                   {gameState === 'won' ? "You solved it!" : "Case closed... incorrectly."}
               </AlertTitle>
               <AlertDescription>
-                  {gameState === 'won' ? `The word was "${wordData?.word}". Loading next case...` : `The word was "${wordData?.word}". Better luck next time.`}
+                  {gameState === 'won' ? (
+                    <>
+                      The word was "{wordData?.word}". 
+                      {isGameLoading ? ' Loading next case...' : ' Ready for next case!'}
+                    </>
+                  ) : (
+                    `The word was "${wordData?.word}". Better luck next time.`
+                  )}
               </AlertDescription>
 
-              {gameState === 'lost' && (
-                  <div className="mt-4 flex justify-center gap-4">
+              <div className="mt-4 flex justify-center gap-4">
+                  {gameState === 'won' && (
+                      <Button 
+                        onClick={() => startNewGame(level + 1, wordData?.word)}
+                        disabled={isGameLoading}
+                      >
+                          {isGameLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight className="mr-2 h-4 w-4" />
+                              Next Case
+                            </>
+                          )}
+                      </Button>
+                  )}
+                  {gameState === 'lost' && (
                       <Button onClick={() => startNewGame(level, wordData?.word)}>
                           <RotateCw className="mr-2 h-4 w-4" /> Retry Level
                       </Button>
-                  </div>
-              )}
+                  )}
+              </div>
               </Alert>
           ) : (
               <>
