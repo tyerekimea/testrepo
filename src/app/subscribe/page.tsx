@@ -1,7 +1,32 @@
 'use client';
 
-import { SubscriptionPlans } from '@/components/payment/SubscriptionPlans';
-import { HintPacks } from '@/components/payment/HintPacks';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
+
+// Load payment components only on client side to avoid SSR issues
+const SubscriptionPlans = dynamic(
+  () => import('@/components/payment/SubscriptionPlans').then(mod => ({ default: mod.SubscriptionPlans })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+const HintPacks = dynamic(
+  () => import('@/components/payment/HintPacks').then(mod => ({ default: mod.HintPacks })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 export default function SubscribePage() {
   return (

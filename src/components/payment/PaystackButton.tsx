@@ -1,11 +1,11 @@
 'use client';
 
-import { usePaystackPayment } from 'react-paystack';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
 interface PaystackButtonProps {
   amount: number; // in NGN
@@ -31,6 +31,14 @@ export function PaystackButton({
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [PaystackHook, setPaystackHook] = useState<any>(null);
+
+  // Load Paystack hook only on client side
+  useEffect(() => {
+    import('react-paystack').then((module) => {
+      setPaystackHook(() => module.usePaystackPayment);
+    });
+  }, []);
 
   const config = {
     reference: `DD_${Date.now()}_${Math.floor(Math.random() * 1000000)}`,
@@ -78,11 +86,16 @@ export function PaystackButton({
     onClose?.();
   };
 
-  const initializePayment = usePaystackPayment(config);
+  const initializePayment = PaystackHook ? PaystackHook(config) : null;
 
   const handleClick = () => {
     if (!user) {
       router.push('/login?redirect=/subscribe');
+      return;
+    }
+
+    if (!initializePayment) {
+      console.error('Paystack not loaded yet');
       return;
     }
 
@@ -95,13 +108,18 @@ export function PaystackButton({
   return (
     <Button
       onClick={handleClick}
-      disabled={loading}
+      disabled={loading || !PaystackHook}
       className={className}
     >
       {loading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Processing...
+        </>
+      ) : !PaystackHook ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Loading...
         </>
       ) : (
         children
