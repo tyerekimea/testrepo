@@ -86,13 +86,30 @@ export default function Home() {
         let attempts = 0;
         while(attempts < 3) { 
             console.log(`[startNewGame] Attempt ${attempts + 1} to generate word...`);
-            const result = await generateWord({ difficulty });
-            console.log('[startNewGame] Generated word:', result.word);
-            if (result.word.toLowerCase() !== currentWord?.toLowerCase()) {
-                newWordData = { ...result, difficulty };
-                break;
+            try {
+                const result = await generateWord({ difficulty });
+                console.log('[startNewGame] Generated word result:', result);
+                
+                if (!result || !result.word) {
+                    console.error('[startNewGame] Invalid result from generateWord:', result);
+                    attempts++;
+                    continue;
+                }
+                
+                console.log('[startNewGame] Generated word:', result.word);
+                if (result.word.toLowerCase() !== currentWord?.toLowerCase()) {
+                    newWordData = { ...result, difficulty };
+                    break;
+                }
+                console.log('[startNewGame] Word matches previous, trying again...');
+            } catch (genError: any) {
+                console.error(`[startNewGame] Attempt ${attempts + 1} failed:`, genError);
+                console.error('[startNewGame] Generation error details:', {
+                    message: genError?.message,
+                    stack: genError?.stack,
+                    name: genError?.name
+                });
             }
-            console.log('[startNewGame] Word matches previous, trying again...');
             attempts++;
         }
         if (!newWordData) {
