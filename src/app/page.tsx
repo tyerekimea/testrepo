@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
+import { useState, useEffect, useCallback, useMemo, useTransition, useRef } from "react";
 import { type WordData, getRankForScore } from "@/lib/game-data";
 import { generateWord } from "@/ai/flows/generate-word-flow";
 import { generateImageDescription } from "@/ai/flows/generate-image-description-flow";
@@ -51,6 +51,7 @@ export default function Home() {
   const [adProgress, setAdProgress] = useState(0);
   const [visualHint, setVisualHint] = useState<string | null>(null);
   const [isVisualHintLoading, setIsVisualHintLoading] = useState(false);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { playSound } = useGameSounds();
 
@@ -129,6 +130,16 @@ export default function Home() {
   useEffect(() => {
     startNewGame(1);
   }, [startNewGame]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        console.log('[Game] Cleaning up transition timeout on unmount');
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
 
 
   const handleGuess = useCallback((letter: string) => {
@@ -269,7 +280,10 @@ export default function Home() {
   }, [user, firestore]);
 
   useEffect(() => {
-    if (!wordData || gameState !== "playing") return;
+    if (!wordData) return;
+    
+    // Only check win/loss conditions when in playing state
+    if (gameState !== "playing") return;
   
     const isWon = displayedWord.every(item => item.revealed);
     
@@ -288,17 +302,20 @@ export default function Home() {
       setScore(s => s + scoreGained);
       
       console.log(`[Game] Will start new game at level ${newLevel} in 3 seconds...`);
-      const timeoutId = setTimeout(async () => {
+      
+      // Clear any existing timeout
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+      
+      // Set new timeout and store reference
+      transitionTimeoutRef.current = setTimeout(async () => {
         console.log('[Game] Timeout fired, starting new game...');
         setLevel(newLevel);
         await startNewGame(newLevel, wordData.word);
         console.log('[Game] New game started successfully');
+        transitionTimeoutRef.current = null;
       }, 3000);
-      
-      return () => {
-        console.log('[Game] Cleaning up timeout');
-        clearTimeout(timeoutId);
-      };
   
     } else if (guessedLetters.incorrect.length >= MAX_INCORRECT_TRIES) {
       setGameState("lost");
