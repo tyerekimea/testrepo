@@ -99,13 +99,20 @@ const generateHintFlow = ai.defineFlow(
       } catch (err: any) {
         lastErr = err;
         const msg = err?.originalMessage ?? err?.message ?? String(err);
+        
+        // Check for common errors that should trigger fallback
         const notFound = /not found/i.test(msg) || /NOT_FOUND/.test(msg);
-        if (notFound) {
-          console.debug('[generateHintFlow] model not found:', candidate, '— trying next');
+        const authError = /401|Incorrect API key|Invalid API key|authentication/i.test(msg);
+        const rateLimitError = /429|rate limit|quota/i.test(msg);
+        
+        if (notFound || authError || rateLimitError) {
+          console.warn(`[generateHintFlow] model "${candidate}" failed: ${msg} — trying next`);
           continue;
         }
-        // For other errors, throw immediately
-        throw new Error(`AI hint generation failed for model "${candidate}": ${msg}`);
+        
+        // For other errors, also try next model (more resilient)
+        console.warn(`[generateHintFlow] model "${candidate}" error: ${msg} — trying next`);
+        continue;
       }
     }
 
