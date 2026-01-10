@@ -33,7 +33,7 @@
     "@capacitor/status-bar": "^8.0.0",
     "@genkit-ai/ai": "^1.27.0",
     "@genkit-ai/core": "^1.27.0",
-    "@genkit-ai/google-genai": "^1.0.0",
+    "@genkit-ai/google-genai": "^1.27.0",
     "@genkit-ai/next": "^1.27.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
