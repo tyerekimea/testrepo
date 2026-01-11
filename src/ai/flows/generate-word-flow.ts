@@ -11,7 +11,12 @@ import {
 export async function generateWord(
   input: GenerateWordInput
 ): Promise<GenerateWordOutput> {
-  return generateWordFlow(input);
+  // Convert excludeWords array to comma-separated string for the prompt
+  const processedInput = {
+    ...input,
+    excludeWordsString: input.excludeWords?.join(', ') || '',
+  };
+  return generateWordFlow(processedInput as any);
 }
 
 const prompt = ai.definePrompt({
@@ -31,8 +36,8 @@ Theme Guidelines:
 - history-quest: Ancient civilizations (Egypt, Rome, Greece, Mesopotamia), historical figures, historical events, artifacts, and historical terminology
 - geo-genius: Countries, capitals, cities, landmarks, geographical features, continents, oceans, and geographical terminology
 
-{{#if excludeWords}}
-IMPORTANT: Do NOT use any of these words (user has already seen them): {{{excludeWords}}}
+{{#if excludeWordsString}}
+IMPORTANT: Do NOT use any of these words (user has already seen them): {{{excludeWordsString}}}
 {{/if}}
 
 Difficulty Guidelines:
@@ -87,7 +92,15 @@ const generateWordFlow = ai.defineFlow(
     for (const candidate of candidates) {
       try {
         console.debug('[generateWordFlow] trying model candidate:', candidate);
-        const { output } = await prompt(input, { model: candidate });
+        
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Model request timed out after 30 seconds')), 30000);
+        });
+        
+        const promptPromise = prompt(input, { model: candidate });
+        const { output } = await Promise.race([promptPromise, timeoutPromise]) as any;
+        
         if (!output) {
           lastErr = new Error('AI returned no output.');
           continue;

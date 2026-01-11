@@ -86,7 +86,15 @@ const generateHintFlow = ai.defineFlow(
     for (const candidate of defaultCandidates) {
       try {
         console.debug('[generateHintFlow] trying model candidate:', candidate);
-        const { output } = await prompt(input, { model: candidate });
+        
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Model request timed out after 30 seconds')), 30000);
+        });
+        
+        const promptPromise = prompt(input, { model: candidate });
+        const { output } = await Promise.race([promptPromise, timeoutPromise]) as any;
+        
         if (!output) {
           lastErr = new Error('AI returned no output.');
           continue;
