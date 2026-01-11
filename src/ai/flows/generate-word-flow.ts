@@ -14,13 +14,6 @@ export async function generateWord(
   return generateWordFlow(input);
 }
 
-const THEME_CONTEXTS = {
-  'current': 'General vocabulary from any topic',
-  'science-safari': 'Biological sciences, space exploration, ecosystems, scientific terminology, natural phenomena, and scientific discoveries',
-  'history-quest': 'Ancient civilizations (Egypt, Rome, Greece, Mesopotamia), historical figures, historical events, artifacts, and historical terminology',
-  'geo-genius': 'Countries, capitals, cities, landmarks, geographical features, continents, oceans, and geographical terminology',
-};
-
 const prompt = ai.definePrompt({
   name: 'generateWordPrompt',
   input: { schema: GenerateWordInputSchema },
@@ -32,23 +25,26 @@ Your task is to generate a single word and its corresponding definition based on
 Difficulty: {{{difficulty}}}
 Theme: {{{theme}}}
 
-{{#if theme}}
-Theme Context: {{#if (eq theme "current")}}${THEME_CONTEXTS.current}{{/if}}{{#if (eq theme "science-safari")}}${THEME_CONTEXTS['science-safari']}{{/if}}{{#if (eq theme "history-quest")}}${THEME_CONTEXTS['history-quest']}{{/if}}{{#if (eq theme "geo-genius")}}${THEME_CONTEXTS['geo-genius']}{{/if}}
-{{else}}
-Theme Context: ${THEME_CONTEXTS.current}
-{{/if}}
+Theme Guidelines:
+- current: General vocabulary from any topic
+- science-safari: Biological sciences, space exploration, ecosystems, scientific terminology, natural phenomena, and scientific discoveries
+- history-quest: Ancient civilizations (Egypt, Rome, Greece, Mesopotamia), historical figures, historical events, artifacts, and historical terminology
+- geo-genius: Countries, capitals, cities, landmarks, geographical features, continents, oceans, and geographical terminology
 
 {{#if excludeWords}}
 IMPORTANT: Do NOT use any of these words (user has already seen them): {{{excludeWords}}}
 {{/if}}
 
-Guidelines:
+Difficulty Guidelines:
 - For "easy": Use common words (5-7 letters) that most people know
 - For "medium": Use moderately challenging words (7-10 letters)
 - For "hard": Use advanced vocabulary words (10+ letters)
-- The word MUST relate to the theme context
+
+Requirements:
+- The word MUST relate to the theme specified above
 - The definition should be clear, concise, and dictionary-style
 - Ensure the word is appropriate for the difficulty level
+- Use only single words (no spaces, no hyphens)
 
 Return a JSON object with:
 - word: the target word (lowercase, no spaces, single word only)
