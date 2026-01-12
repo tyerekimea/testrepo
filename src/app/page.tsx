@@ -80,8 +80,16 @@ export default function Home() {
 
   const startNewGame = useCallback(async (currentLevel: number, currentWord?: string) => {
     console.log('[startNewGame] Starting new game at level:', currentLevel);
+    
+    // Reset all game state immediately
     setIsGameLoading(true);
     setGameState("playing");
+    setGuessedLetters({ correct: [], incorrect: [] });
+    setHint(null);
+    setRevealedByHint([]);
+    setVisualHint(null);
+    setWordData(null); // Clear old word data immediately
+    
     const difficulty = getDifficultyForLevel(currentLevel);
     let newWordData: WordData | null = null;
     
@@ -148,10 +156,6 @@ export default function Home() {
     if(newWordData) {
         console.log('[startNewGame] Setting new word data:', newWordData.word);
         setWordData(newWordData);
-        setGuessedLetters({ correct: [], incorrect: [] });
-        setHint(null);
-        setRevealedByHint([]);
-        setVisualHint(null);
     } else {
         console.error('[startNewGame] No word data available, game cannot continue');
     }
@@ -440,10 +444,14 @@ export default function Home() {
               <div className="mt-4 flex justify-center gap-4">
                   {gameState === 'won' && (
                       <Button 
-                        onClick={async () => {
+                        onClick={() => {
+                          console.log('[Next Case Button] Clicked, current level:', level);
                           const newLevel = level + 1;
+                          console.log('[Next Case Button] Setting new level:', newLevel);
                           setLevel(newLevel);
-                          await startNewGame(newLevel, wordData?.word);
+                          setGameState("playing");
+                          console.log('[Next Case Button] Calling startNewGame');
+                          startNewGame(newLevel, wordData?.word);
                         }}
                         disabled={isGameLoading}
                       >
@@ -461,7 +469,11 @@ export default function Home() {
                       </Button>
                   )}
                   {gameState === 'lost' && (
-                      <Button onClick={() => startNewGame(level, wordData?.word)}>
+                      <Button onClick={() => {
+                        console.log('[Retry Button] Clicked, retrying level:', level);
+                        setGameState("playing");
+                        startNewGame(level, wordData?.word);
+                      }}>
                           <RotateCw className="mr-2 h-4 w-4" /> Retry Level
                       </Button>
                   )}
