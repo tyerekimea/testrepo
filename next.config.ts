@@ -1,18 +1,23 @@
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Mobile build (static export) - DISABLED for now due to API routes
-  // See MOBILE_BUILD_NOTES.md for solutions
-  // output: 'export',
-  // images: {
-  //   unoptimized: true,
-  // },
-  // trailingSlash: true,
   experimental: {
+    // Add allowed development origins to fix cross-origin issues in preview.
+    allowedDevOrigins: [
+      "*.firebase.studio",
+      "*.cloudworkstations.dev",
+      "localhost:9003",
+      "*.app.github.dev",
+      "*.github.dev",
+    ],
     serverActions: {
+      // This remains for server action specific origins if needed,
+      // but allowedDevOrigins handles the dev server requests.
       allowedOrigins: [
         "*.firebase.studio",
+        "*.cloudworkstations.dev",
         "localhost:9003",
         "*.app.github.dev",
         "*.github.dev",
