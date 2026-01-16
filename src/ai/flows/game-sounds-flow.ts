@@ -9,7 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import wav from 'wav';
 
 const GameSoundInputSchema = z
   .string()
@@ -29,33 +28,6 @@ export async function getGameSound(
   return gameSoundFlow(input);
 }
 
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    const bufs: Buffer[] = [];
-    writer.on('error', reject);
-    writer.on('data', function (d) {
-      bufs.push(d);
-    });
-    writer.on('end', function () {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
 const gameSoundFlow = ai.defineFlow(
   {
     name: 'gameSoundFlow',
@@ -63,28 +35,32 @@ const gameSoundFlow = ai.defineFlow(
     outputSchema: GameSoundOutputSchema,
   },
   async query => {
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'},
+    try {
+      const {media} = await ai.generate({
+        model: 'googleai/gemini-2.5-flash-preview-tts',
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {voiceName: 'Algenib'},
+            },
           },
         },
-      },
-      prompt: query,
-    });
-    if (!media) {
-      throw new Error('no media returned');
+        prompt: query,
+      });
+      if (!media) {
+        throw new Error('no media returned');
+      }
+      return {
+        soundDataUri: media.url,
+      };
+    } catch (error) {
+      console.error('Error generating game sound:', error);
+      throw new Error(
+        `Failed to generate game sound: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
-    const wavBase64 = await toWav(audioBuffer);
-    return {
-      soundDataUri: 'data:audio/wav;base64,' + wavBase64,
-    };
   }
 );

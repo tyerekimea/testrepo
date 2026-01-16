@@ -1,10 +1,20 @@
+import handleRoute from '@genkit-ai/next';
+import { action } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@/lib/genkit';
 
-import { run } from '@genkit-ai/next';
-import { ai } from '@/ai/genkit';
-import '@/ai/flows/game-sounds-flow';
-import '@/ai/flows/generate-word-flow';
-import '@/ai/flows/generate-hints';
+// Define an action
+const myAction = action(
+  {
+    name: 'myAction',
+    actionType: 'custom',
+    inputSchema: z.string(),
+    outputSchema: z.string(),
+  },
+  async (input) => {
+    return await ai.runSomething(input);
+  }
+);
 
-export const POST = run({
-  flows: ai.getFlows(),
-});
+export const GET = handleRoute(myAction);
+export const POST = handleRoute(myAction);

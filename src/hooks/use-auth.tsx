@@ -59,9 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await signInWithEmailAndPassword(auth, email, pass);
         router.push('/');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Login failed:', error);
-        // Here you could use the toast to show an error to the user
+        const errorMessage = error?.code === 'auth/api-key-not-valid' 
+          ? 'Firebase is not configured. Please set up Firebase credentials or play without an account.'
+          : error?.message || 'Login failed. Please try again.';
+        throw new Error(errorMessage);
       } finally {
         setLoading(false);
       }

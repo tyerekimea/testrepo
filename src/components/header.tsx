@@ -47,6 +47,12 @@ export default function Header() {
               Leaderboard
             </Link>
             <Link
+              href="/pricing"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/store"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >

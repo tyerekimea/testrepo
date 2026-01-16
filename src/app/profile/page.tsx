@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Target, Edit, Save, Trash2, X } from "lucide-react";
+import { Trophy, Star, Target, Edit, Save, Trash2, X, Crown, Calendar, CheckCircle } from "lucide-react";
 import type { ImagePlaceholder } from "@/lib/placeholder-images";
 import placeholderData from '@/lib/placeholder-images.json';
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -128,6 +128,12 @@ export default function ProfilePage() {
                   <h1 className="text-4xl font-bold font-headline">{userProfile.username}</h1>
                 )}
                 <p className="text-muted-foreground">{userProfile.email}</p>
+                {userProfile.isPremium && (
+                  <Badge className="mt-2 bg-gradient-to-r from-yellow-500 to-orange-500">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Premium Member
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -157,6 +163,70 @@ export default function ProfilePage() {
                   </div>
               </div>
             </div>
+            
+            {/* Subscription Status */}
+            {userProfile.isPremium && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Subscription</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-6 w-6 text-green-500" />
+                      <div>
+                        <span className="font-medium block">Status</span>
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {userProfile.subscriptionStatus || 'Active'}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-500">Active</Badge>
+                  </div>
+                  
+                  {userProfile.subscriptionPlan && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <Crown className="h-6 w-6 text-yellow-500" />
+                        <span className="font-medium">Plan</span>
+                      </div>
+                      <Badge variant="secondary" className="capitalize">
+                        {userProfile.subscriptionPlan}
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {userProfile.subscriptionEndDate && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-6 w-6 text-blue-500" />
+                        <span className="font-medium">Renews On</span>
+                      </div>
+                      <Badge variant="secondary">
+                        {new Date(userProfile.subscriptionEndDate).toLocaleDateString()}
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <Button variant="outline" className="w-full" onClick={() => router.push('/subscribe')}>
+                    Manage Subscription
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {!userProfile.isPremium && (
+              <div className="p-4 rounded-lg bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <Crown className="h-6 w-6 text-yellow-500" />
+                  <h3 className="font-semibold">Upgrade to Premium</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Get unlimited hints, ad-free experience, and exclusive features!
+                </p>
+                <Button className="w-full" onClick={() => router.push('/pricing')}>
+                  View Plans
+                </Button>
+              </div>
+            )}
             
             <div>
               <h3 className="text-lg font-semibold mb-2">Account</h3>

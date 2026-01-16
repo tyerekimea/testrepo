@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Definition Detective</string>
+    <string name="title_activity_main">Definition Detective</string>
+    <string name="package_name">com.definitiondetective.app</string>
+    <string name="custom_url_scheme">com.definitiondetective.app</string>
+</resources>
